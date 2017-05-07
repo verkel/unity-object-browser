@@ -25,5 +25,15 @@ namespace DebugObjectBrowser {
 		public Type GetHandledType() {
 			return typeof(ICollection);
 		}
+
+		public bool IsLeaf(object obj) {
+			return false;
+		}
+
+
+		public string GetBreadcrumbText(object parent, Element elem)
+		{
+			return elem.text + ": " + elem.obj.GetType().Name;
+		}
 	}
 }

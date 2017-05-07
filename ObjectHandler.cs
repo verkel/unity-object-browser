@@ -1,10 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
 namespace DebugObjectBrowser {
 	public class ObjectHandler : ITypeHandler {
+		private static readonly FieldInfoComparer fieldInfoComparer = new FieldInfoComparer();
+
 		private readonly IDictionary<Type, FieldInfo[]> typeToFieldInfos
 			= new Dictionary<Type, FieldInfo[]>();
 
@@ -17,6 +18,7 @@ namespace DebugObjectBrowser {
 			FieldInfo[] fieldInfos;
 			if (!typeToFieldInfos.TryGetValue(type, out fieldInfos)) {
 				fieldInfos = type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+				Array.Sort(fieldInfos, fieldInfoComparer);
 				typeToFieldInfos[type] = fieldInfos;
 			}
 			return FieldsEnumerator(fieldInfos, obj);
@@ -31,6 +33,28 @@ namespace DebugObjectBrowser {
 
 		public Type GetHandledType() {
 			return typeof(object);
+		}
+
+		public bool IsLeaf(object obj) {
+			return false;
+		}
+
+		public string GetBreadcrumbText(object parent, Element elem) {
+			return parent.GetType().Name + "." + elem.text;
+		}
+	}
+
+	class FieldInfoComparer : IComparer<FieldInfo>
+	{
+		public int Compare(FieldInfo x, FieldInfo y) {
+			int typeCmp = GetTypeOrdinal(x).CompareTo(GetTypeOrdinal(y));
+			if (typeCmp != 0) return typeCmp;
+			int nameCmp = x.Name.CompareTo(y.Name);
+			return nameCmp;
+		}
+
+		private int GetTypeOrdinal(FieldInfo info) {
+			return info.FieldType.IsValueType ? 1 : 0;
 		}
 	}
 }

@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Boomlagoon.TextFx.JSON;
 using UnityEngine;
 
 namespace DebugObjectBrowser {
@@ -28,11 +27,7 @@ namespace DebugObjectBrowser {
 		private IDictionary<Type, ITypeHandler> typeToHandler = new Dictionary<Type, ITypeHandler>();
 		private Action action = null;
 
-		private ObjectBrowser() {
-			path.Add(new Element(root, "Objects"));
-			RegisterHandler(new ObjectHandler());
-			RegisterHandler(new CollectionHandler());
-		}
+		#region Public API
 
 		public void Add(object obj) {
 			root.Add(obj);
@@ -42,14 +37,39 @@ namespace DebugObjectBrowser {
 			root.Remove(obj);
 		}
 
-		public void RegisterHandler(ITypeHandler handler) {
-			registeredHandlers[handler.GetHandledType()] = handler;
+		public void RegisterHandler(Type type, ITypeHandler handler) {
+			registeredHandlers[type] = handler;
 		}
 
 		public void DrawGui() {
 			DrawBreadcrumb();
 			DrawFieldList();
 			DoAction();
+		}
+
+		#endregion
+
+		private ObjectBrowser() {
+			AddRootElement();
+			RegisterBuiltinHandlers();
+		}
+
+		private void RegisterBuiltinHandlers() {
+			RegisterHandler(typeof(object), new ObjectHandler());
+			var leafTypeHandler = new BasicLeafTypeHandler();
+			foreach (var primitiveType in TypeUtil.Primitives) {
+				RegisterHandler(primitiveType, leafTypeHandler);
+			}
+			RegisterHandler(typeof(Enum), leafTypeHandler);
+			RegisterHandler(typeof(string), leafTypeHandler);
+			RegisterHandler(typeof(ICollection), new CollectionHandler());
+		}
+
+		private void AddRootElement() {
+			var rootElem = new Element(root, "Objects") {
+				breadcrumbText = "Objects"
+			};
+			path.Add(rootElem);
 		}
 
 		private void DrawFieldList() {
@@ -84,7 +104,7 @@ namespace DebugObjectBrowser {
 			while (enumerator.MoveNext()) {
 				var element = enumerator.Current;
 				var obj = element.obj;
-				var handler = GetHandler(element);
+				var handler = GetHandler(obj);
 				var valueText = obj == null ? "null" : handler.GetStringValue(obj);
 				GUILayout.Label(valueText);
 			}
@@ -96,17 +116,21 @@ namespace DebugObjectBrowser {
 			GUILayout.BeginVertical();
 			while (enumerator.MoveNext()) {
 				var element = enumerator.Current;
+				var obj = element.obj;
+				var handler = GetHandler(obj);
 				var buttonText = element.text;
+				GUI.enabled = !handler.IsLeaf(obj);
 				if (GUILayout.Button(buttonText, FieldListButtonLayout)) {
 					action = () => SelectChild(element);
 				}
+				GUI.enabled = true;
 			}
 			GUILayout.EndVertical();
 		}
 
 		private void GoToAncestor(object parent) {
 			while (path.Last().obj != parent) {
-				path.Pop();
+				path.RemoveAt(path.Count - 1);
 			}
 		}
 
@@ -117,20 +141,24 @@ namespace DebugObjectBrowser {
 		private void DrawBreadcrumb() {
 			GUILayout.BeginHorizontal();
 			using (var pathElements = path.GetEnumerator()) {
+				Element parentElem = new Element();
 				while (pathElements.MoveNext()) {
 					var elem = pathElements.Current;
 					var obj = elem.obj;
-					var text = elem.text;
-					if (GUILayout.Button(text, BreadcrumbButtonLayout)) {
+					if (elem.breadcrumbText == null) {
+						elem.CreateBreadcrumbText(GetHandler(parentElem.obj), parentElem.obj, elem);
+					}
+					if (GUILayout.Button(elem.breadcrumbText, BreadcrumbButtonLayout)) {
 						action = () => GoToAncestor(obj);
 					}
+					parentElem = elem;
 				}
 			}
 			GUILayout.EndHorizontal();
 		}
 
 		private ITypeHandler GetHandler(object obj) {
-			var type = obj.GetType();
+			var type = obj == null ? typeof(ValueType) : obj.GetType();
 			ITypeHandler handler;
 			if (typeToHandler.TryGetValue(type, out handler)) {
 				return handler;
