@@ -17,8 +17,9 @@ namespace DebugObjectBrowser {
 			}
 		}
 
-		private readonly GUILayoutOption[] FieldListButtonLayout = { GUILayout.MinWidth(75) };
-		private readonly GUILayoutOption[] BreadcrumbButtonLayout = { GUILayout.MinWidth(75), GUILayout.ExpandWidth(false) };
+		private static readonly GUILayoutOption[] FieldListButtonLayout = { GUILayout.MinWidth(75) };
+		private static readonly GUILayoutOption[] BreadcrumbButtonLayout = { GUILayout.MinWidth(75), GUILayout.ExpandWidth(false) };
+		private static readonly ITypeHandler LeafTypeHandler = new BasicLeafTypeHandler();
 
 		private List<Element> path = new List<Element>();
 		private List<object> root = new List<object>();
@@ -56,12 +57,11 @@ namespace DebugObjectBrowser {
 
 		private void RegisterBuiltinHandlers() {
 			RegisterHandler(typeof(object), new ObjectHandler());
-			var leafTypeHandler = new BasicLeafTypeHandler();
 			foreach (var primitiveType in TypeUtil.Primitives) {
-				RegisterHandler(primitiveType, leafTypeHandler);
+				RegisterHandler(primitiveType, LeafTypeHandler);
 			}
-			RegisterHandler(typeof(Enum), leafTypeHandler);
-			RegisterHandler(typeof(string), leafTypeHandler);
+			RegisterHandler(typeof(Enum), LeafTypeHandler);
+			RegisterHandler(typeof(string), LeafTypeHandler);
 			RegisterHandler(typeof(ICollection), new CollectionHandler());
 		}
 
@@ -158,7 +158,9 @@ namespace DebugObjectBrowser {
 		}
 
 		private ITypeHandler GetHandler(object obj) {
-			var type = obj == null ? typeof(ValueType) : obj.GetType();
+			if (obj == null) return LeafTypeHandler;
+
+			var type = obj.GetType();
 			ITypeHandler handler;
 			if (typeToHandler.TryGetValue(type, out handler)) {
 				return handler;
