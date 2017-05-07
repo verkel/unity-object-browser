@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Boomlagoon.TextFx.JSON;
 using UnityEngine;
 
 namespace DebugObjectBrowser {
@@ -16,14 +18,15 @@ namespace DebugObjectBrowser {
 			}
 		}
 
-		private Stack<object> path = new Stack<object>();
+		private List<object> path = new List<object>();
 		private List<object> root = new List<object>();
 		private Vector2 scrollPos = new Vector2();
 		private IDictionary<Type, ITypeHandler> registeredHandlers = new Dictionary<Type, ITypeHandler>();
 		private IDictionary<Type, ITypeHandler> typeToHandler = new Dictionary<Type, ITypeHandler>();
+		private Action action = null;
 
 		private ObjectBrowser() {
-			path.Push(root);
+			path.Add(root);
 			RegisterHandler(new ObjectHandler());
 			RegisterHandler(new CollectionHandler());
 		}
@@ -42,51 +45,78 @@ namespace DebugObjectBrowser {
 
 		public void DrawGui() {
 			DrawBreadcrumb();
-			DrawColumns();
+			DrawFieldList();
+			DoAction();
 		}
 
-		private void DrawColumns() {
+		private void DrawFieldList() {
+			DrawFieldList(path.Last());
+		}
+
+		private void DoAction() {
+			if (action != null) action();
+		}
+
+		private void DrawFieldList(object parent) {
+			scrollPos = GUILayout.BeginScrollView(scrollPos, GUI.skin.box);
 			GUILayout.BeginHorizontal();
-			using (var pathElements = path.GetEnumerator()) {
-				while (pathElements.MoveNext()) {
-					var element = pathElements.Current;
-					DrawColumn(element);
-				}
-			}
+			DoDrawFieldList(parent);
+			GUILayout.FlexibleSpace();
 			GUILayout.EndHorizontal();
+			GUILayout.EndScrollView();
 		}
 
-		private void DrawColumn(object parent) {
-			GUILayout.BeginVertical();
+		private void DoDrawFieldList(object parent) {
 			var parentHandler = GetHandler(parent);
-			var enumerator = parentHandler.GetChildren(parent);
+			DrawFieldListButtonsColumn(parent, parentHandler);
+			DrawFieldListValuesColumn(parent, parentHandler);
+		}
+
+		private void DrawFieldListValuesColumn(object parent, ITypeHandler parentHandler) {
+			GUILayout.BeginVertical();
+			IEnumerator<Element> enumerator = parentHandler.GetChildren(parent);
 			while (enumerator.MoveNext()) {
-				var obj = enumerator.Current;
-				var handler = GetHandler(obj);
-				var text = handler.GetStringValue(obj);
-				if (GUILayout.Button(text)) {
-					SetSelection(parent, obj);
+				var element = enumerator.Current;
+				var obj = element.obj;
+				var handler = GetHandler(element);
+				var valueText = obj == null ? "null" : handler.GetStringValue(obj);
+				GUILayout.Label(valueText);
+			}
+			GUILayout.EndVertical();
+		}
+
+		private void DrawFieldListButtonsColumn(object parent, ITypeHandler parentHandler) {
+			var enumerator = parentHandler.GetChildren(parent);
+			GUILayout.BeginVertical();
+			while (enumerator.MoveNext()) {
+				var element = enumerator.Current;
+				var buttonText = element.text;
+				if (GUILayout.Button(buttonText, GUILayout.MinWidth(75))) {
+					action = () => SetSelection(parent, element.obj);
 				}
 			}
 			GUILayout.EndVertical();
 		}
 
-		private void SetSelection(object parent, object obj) {
-			while (path.Peek() != parent) {
+		private void SetSelection(object parent, object obj = null) {
+			while (path.Last() != parent) {
 				path.Pop();
 			}
-			path.Push(obj);
+			if (obj != null) {
+				path.Add(obj);
+			}
 		}
 
 		private void DrawBreadcrumb() {
 			GUILayout.BeginHorizontal();
-			GUILayout.Label("Selection: ");
 			using (var pathElements = path.GetEnumerator()) {
 				while (pathElements.MoveNext()) {
 					var obj = pathElements.Current;
 					var handler = GetHandler(obj);
 					var text = handler.GetStringValue(obj);
-					GUILayout.Button(text);
+					if (GUILayout.Button(text, GUILayout.ExpandWidth(false))) {
+						action = () => SetSelection(obj);
+					}
 				}
 			}
 			GUILayout.EndHorizontal();

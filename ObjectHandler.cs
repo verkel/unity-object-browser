@@ -12,14 +12,21 @@ namespace DebugObjectBrowser {
 			return obj.ToString();
 		}
 
-		public IEnumerator GetChildren(object obj) {
+		public IEnumerator<Element> GetChildren(object obj) {
 			var type = obj.GetType();
 			FieldInfo[] fieldInfos;
 			if (!typeToFieldInfos.TryGetValue(type, out fieldInfos)) {
 				fieldInfos = type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
 				typeToFieldInfos[type] = fieldInfos;
 			}
-			return fieldInfos.GetEnumerator();
+			return FieldsEnumerator(fieldInfos, obj);
+		}
+
+		private IEnumerator<Element> FieldsEnumerator(FieldInfo[] fieldInfos, object obj) {
+			for (int i = 0; i < fieldInfos.Length; i++) {
+				var fieldInfo = fieldInfos[i];
+				yield return new Element(fieldInfo.GetValue(obj), fieldInfo.Name);
+			}
 		}
 
 		public Type GetHandledType() {

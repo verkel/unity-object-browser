@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace DebugObjectBrowser {
 	public class CollectionHandler : ITypeHandler {
@@ -7,9 +8,18 @@ namespace DebugObjectBrowser {
 			return obj.ToString();
 		}
 
-		public IEnumerator GetChildren(object obj) {
+		public IEnumerator<Element> GetChildren(object obj) {
 			ICollection collection = (ICollection)obj;
-			return collection.GetEnumerator();
+			return CollectionEnumerator(collection);
+		}
+
+		private IEnumerator<Element> CollectionEnumerator(ICollection collection) {
+			var inner = collection.GetEnumerator();
+			int index = 0;
+			while (inner.MoveNext()) {
+				yield return new Element(inner.Current, index.ToString());
+				index++;
+			}
 		}
 
 		public Type GetHandledType() {
