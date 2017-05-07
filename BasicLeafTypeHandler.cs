@@ -2,12 +2,7 @@
 using System.Collections.Generic;
 
 namespace DebugObjectBrowser {
-	public class BasicLeafTypeHandler : ITypeHandler
-	{
-		public Type GetHandledType() {
-			return typeof(ValueType);
-		}
-
+	public class BasicLeafTypeHandler : ITypeHandler {
 		public string GetStringValue(object obj) {
 			return obj.ToString();
 		}

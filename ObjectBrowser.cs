@@ -21,6 +21,16 @@ namespace DebugObjectBrowser {
 		private static readonly GUILayoutOption[] BreadcrumbButtonLayout = { GUILayout.MinWidth(75), GUILayout.ExpandWidth(false) };
 		private static readonly ITypeHandler LeafTypeHandler = new BasicLeafTypeHandler();
 
+		private GUIStyle fieldListValueLabelStyle;
+		private GUIStyle FieldListValueLabelStyle {
+			get {
+				if (fieldListValueLabelStyle == null) {
+					fieldListValueLabelStyle = new GUIStyle(GUI.skin.label) { wordWrap = false };
+				}
+				return fieldListValueLabelStyle;
+			}
+		}
+
 		private List<Element> path = new List<Element>();
 		private List<object> root = new List<object>();
 		private Vector2 scrollPos = new Vector2();
@@ -63,6 +73,8 @@ namespace DebugObjectBrowser {
 			RegisterHandler(typeof(Enum), LeafTypeHandler);
 			RegisterHandler(typeof(string), LeafTypeHandler);
 			RegisterHandler(typeof(ICollection), new CollectionHandler());
+
+			RegisterHandler(typeof(GameObject), new GameObjectHandler());
 		}
 
 		private void AddRootElement() {
@@ -106,7 +118,7 @@ namespace DebugObjectBrowser {
 				var obj = element.obj;
 				var handler = GetHandler(obj);
 				var valueText = obj == null ? "null" : handler.GetStringValue(obj);
-				GUILayout.Label(valueText);
+				GUILayout.Label(valueText, FieldListValueLabelStyle);
 			}
 			GUILayout.EndVertical();
 		}

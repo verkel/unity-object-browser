@@ -9,7 +9,7 @@ namespace DebugObjectBrowser {
 		}
 
 		public IEnumerator<Element> GetChildren(object obj) {
-			ICollection collection = (ICollection)obj;
+			ICollection collection = (ICollection) obj;
 			return CollectionEnumerator(collection);
 		}
 
@@ -30,9 +30,7 @@ namespace DebugObjectBrowser {
 			return false;
 		}
 
-
-		public string GetBreadcrumbText(object parent, Element elem)
-		{
+		public string GetBreadcrumbText(object parent, Element elem) {
 			return elem.text + ": " + elem.obj.GetType().Name;
 		}
 	}

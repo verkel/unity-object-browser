@@ -17,7 +17,7 @@ namespace DebugObjectBrowser {
 			var type = obj.GetType();
 			FieldInfo[] fieldInfos;
 			if (!typeToFieldInfos.TryGetValue(type, out fieldInfos)) {
-				fieldInfos = type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+				fieldInfos = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 				Array.Sort(fieldInfos, fieldInfoComparer);
 				typeToFieldInfos[type] = fieldInfos;
 			}
@@ -31,10 +31,6 @@ namespace DebugObjectBrowser {
 			}
 		}
 
-		public Type GetHandledType() {
-			return typeof(object);
-		}
-
 		public bool IsLeaf(object obj) {
 			return false;
 		}
@@ -44,8 +40,7 @@ namespace DebugObjectBrowser {
 		}
 	}
 
-	class FieldInfoComparer : IComparer<FieldInfo>
-	{
+	class FieldInfoComparer : IComparer<FieldInfo> {
 		public int Compare(FieldInfo x, FieldInfo y) {
 			int typeCmp = GetTypeOrdinal(x).CompareTo(GetTypeOrdinal(y));
 			if (typeCmp != 0) return typeCmp;

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace DebugObjectBrowser {
 	public interface ITypeHandler {
-		Type GetHandledType();
 		string GetStringValue(object obj);
 		string GetBreadcrumbText(object parent, Element elem);
 		IEnumerator<Element> GetChildren(object obj);
