@@ -18,7 +18,10 @@ namespace DebugObjectBrowser {
 			}
 		}
 
-		private List<object> path = new List<object>();
+		private readonly GUILayoutOption[] FieldListButtonLayout = { GUILayout.MinWidth(75) };
+		private readonly GUILayoutOption[] BreadcrumbButtonLayout = { GUILayout.MinWidth(75), GUILayout.ExpandWidth(false) };
+
+		private List<Element> path = new List<Element>();
 		private List<object> root = new List<object>();
 		private Vector2 scrollPos = new Vector2();
 		private IDictionary<Type, ITypeHandler> registeredHandlers = new Dictionary<Type, ITypeHandler>();
@@ -26,7 +29,7 @@ namespace DebugObjectBrowser {
 		private Action action = null;
 
 		private ObjectBrowser() {
-			path.Add(root);
+			path.Add(new Element(root, "Objects"));
 			RegisterHandler(new ObjectHandler());
 			RegisterHandler(new CollectionHandler());
 		}
@@ -50,11 +53,14 @@ namespace DebugObjectBrowser {
 		}
 
 		private void DrawFieldList() {
-			DrawFieldList(path.Last());
+			DrawFieldList(path.Last().obj);
 		}
 
 		private void DoAction() {
-			if (action != null) action();
+			if (action != null) {
+				action();
+				action = null;
+			}
 		}
 
 		private void DrawFieldList(object parent) {
@@ -91,31 +97,32 @@ namespace DebugObjectBrowser {
 			while (enumerator.MoveNext()) {
 				var element = enumerator.Current;
 				var buttonText = element.text;
-				if (GUILayout.Button(buttonText, GUILayout.MinWidth(75))) {
-					action = () => SetSelection(parent, element.obj);
+				if (GUILayout.Button(buttonText, FieldListButtonLayout)) {
+					action = () => SelectChild(element);
 				}
 			}
 			GUILayout.EndVertical();
 		}
 
-		private void SetSelection(object parent, object obj = null) {
-			while (path.Last() != parent) {
+		private void GoToAncestor(object parent) {
+			while (path.Last().obj != parent) {
 				path.Pop();
 			}
-			if (obj != null) {
-				path.Add(obj);
-			}
+		}
+
+		private void SelectChild(Element elem) {
+			path.Add(elem);
 		}
 
 		private void DrawBreadcrumb() {
 			GUILayout.BeginHorizontal();
 			using (var pathElements = path.GetEnumerator()) {
 				while (pathElements.MoveNext()) {
-					var obj = pathElements.Current;
-					var handler = GetHandler(obj);
-					var text = handler.GetStringValue(obj);
-					if (GUILayout.Button(text, GUILayout.ExpandWidth(false))) {
-						action = () => SetSelection(obj);
+					var elem = pathElements.Current;
+					var obj = elem.obj;
+					var text = elem.text;
+					if (GUILayout.Button(text, BreadcrumbButtonLayout)) {
+						action = () => GoToAncestor(obj);
 					}
 				}
 			}
