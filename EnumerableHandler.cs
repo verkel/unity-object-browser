@@ -3,21 +3,21 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace DebugObjectBrowser {
-	public class CollectionHandler : ITypeHandler {
+	public class EnumerableHandler : ITypeHandler {
 		public string GetStringValue(object obj) {
 			return obj.ToString();
 		}
 
 		public IEnumerator<Element> GetChildren(object obj) {
-			ICollection collection = (ICollection) obj;
-			return CollectionEnumerator(collection);
+			IEnumerable enumerable = (IEnumerable) obj;
+			return EnumerableEnumerator(enumerable);
 		}
 
-		private IEnumerator<Element> CollectionEnumerator(ICollection collection) {
-			var inner = collection.GetEnumerator();
+		private IEnumerator<Element> EnumerableEnumerator(IEnumerable enumerable) {
+			var inner = enumerable.GetEnumerator();
 			int index = 0;
 			while (inner.MoveNext()) {
-				yield return new Element(inner.Current, index.ToString());
+				yield return Element.Create(inner.Current, index.ToString());
 				index++;
 			}
 		}

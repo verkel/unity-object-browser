@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace DebugObjectBrowser {
 	public class ObjectBrowser {
@@ -21,6 +22,7 @@ namespace DebugObjectBrowser {
 		private static readonly GUILayoutOption[] BreadcrumbButtonLayout = { GUILayout.MinWidth(75), GUILayout.ExpandWidth(false) };
 		private static readonly GUILayoutOption[] UpdateIntervalSliderLayout = { GUILayout.MinWidth(200) };
 		private static readonly ITypeHandler LeafTypeHandler = new BasicLeafTypeHandler();
+		private static readonly ITypeHandler EnumerableHandler = new EnumerableHandler();
 
 		private GUIStyle fieldListValueLabelStyle;
 		private GUIStyle FieldListValueLabelStyle {
@@ -81,15 +83,16 @@ namespace DebugObjectBrowser {
 			}
 			RegisterHandler(typeof(Enum), LeafTypeHandler);
 			RegisterHandler(typeof(string), LeafTypeHandler);
-			RegisterHandler(typeof(ICollection), new CollectionHandler());
+			RegisterHandler(typeof(ICollection), EnumerableHandler);
+			RegisterHandler(typeof(IShowAsList), EnumerableHandler);
 
 			RegisterHandler(typeof(GameObject), new GameObjectHandler());
+			RegisterHandler(typeof(Scene), new SceneHandler());
 		}
 
 		private void AddRootElement() {
-			var rootElem = new Element(root, "Objects") {
-				breadcrumbText = "Objects"
-			};
+			var rootElem = Element.Create(root, "Objects");
+			rootElem.breadcrumbText = "Objects";
 			path.Add(rootElem);
 		}
 
@@ -160,15 +163,29 @@ namespace DebugObjectBrowser {
 		}
 
 		private void DrawFieldListValueLabel(Element element, object obj, ITypeHandler handler) {
-			var valueText = obj == null ? "null" : handler.GetStringValue(obj);
+			string valueText;
+			if (element.type == Element.Type.ValueRow) {
+				valueText = obj == null ? "null" : handler.GetStringValue(obj);
+			}
+			else {
+				valueText = "";
+			}
 			GUILayout.Label(valueText, FieldListValueLabelStyle);
 		}
 
 		private void DrawFieldListButton(Element element, object obj, ITypeHandler handler) {
 			var buttonText = element.text;
 			GUI.enabled = !handler.IsLeaf(obj);
-			if (GUILayout.Button(buttonText, FieldListButtonLayout)) {
-				action = () => SelectChild(element);
+			if (element.type == Element.Type.ValueRow) {
+				if (GUILayout.Button(buttonText, FieldListButtonLayout)) {
+					action = () => SelectChild(element);
+				}
+			}
+			else if (element.type == Element.Type.Header) {
+				var color = GUI.color;
+				GUI.color = element.textColor;
+				GUILayout.Label(element.text);
+				GUI.color = color;
 			}
 			GUI.enabled = true;
 		}

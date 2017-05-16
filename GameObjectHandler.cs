@@ -14,13 +14,21 @@ namespace DebugObjectBrowser {
 			componentResults.Clear();
 			GameObject go = (GameObject) obj;
 			go.GetComponents(componentResults);
-			return ComponentEnumerator(componentResults);
+			return ComponentAndChildrenEnumerator(go, componentResults);
 		}
 
-		private IEnumerator<Element> ComponentEnumerator(List<Component> components) {
+		private IEnumerator<Element> ComponentAndChildrenEnumerator(GameObject go, List<Component> components) {
+			yield return Element.CreateHeader("Components", Color.magenta);
 			for (int i = 0; i < components.Count; i++) {
 				var component = components[i];
-				yield return new Element(component, component.GetType().Name);
+				yield return Element.Create(component, component.GetType().Name);
+			}
+
+			yield return Element.CreateHeader("Children", Color.blue);
+			var tf = go.transform;
+			for (int i = 0; i < tf.childCount; i++) {
+				var child = tf.GetChild(i).gameObject;
+				yield return Element.Create(child, child.name);
 			}
 		}
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using UnityEngine;
 
 namespace DebugObjectBrowser {
 	public class ObjectHandler : ITypeHandler {
@@ -25,9 +26,10 @@ namespace DebugObjectBrowser {
 		}
 
 		private IEnumerator<Element> FieldsEnumerator(FieldInfo[] fieldInfos, object obj) {
+			yield return Element.CreateHeader("Fields", Color.cyan);
 			for (int i = 0; i < fieldInfos.Length; i++) {
 				var fieldInfo = fieldInfos[i];
-				yield return new Element(fieldInfo.GetValue(obj), fieldInfo.Name);
+				yield return Element.Create(fieldInfo.GetValue(obj), fieldInfo.Name);
 			}
 		}
 
