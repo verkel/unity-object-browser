@@ -24,16 +24,6 @@ namespace DebugObjectBrowser {
 		private static readonly ITypeHandler LeafTypeHandler = new BasicLeafTypeHandler();
 		private static readonly ITypeHandler EnumerableHandler = new EnumerableHandler();
 
-		private GUIStyle fieldListValueLabelStyle;
-		private GUIStyle FieldListValueLabelStyle {
-			get {
-				if (fieldListValueLabelStyle == null) {
-					fieldListValueLabelStyle = new GUIStyle(GUI.skin.label) { wordWrap = false };
-				}
-				return fieldListValueLabelStyle;
-			}
-		}
-
 		private List<Element> path = new List<Element>();
 		private List<object> root = new List<object>();
 		private List<Element> childrenCache = new List<Element>();
@@ -46,6 +36,18 @@ namespace DebugObjectBrowser {
 		private IDictionary<Type, ITypeHandler> registeredHandlers = new Dictionary<Type, ITypeHandler>();
 		private IDictionary<Type, ITypeHandler> typeToHandler = new Dictionary<Type, ITypeHandler>();
 		private Action action = null;
+
+		private GUIStyle fieldListValueLabelStyle;
+		private GUIStyle FieldListValueLabelStyle {
+			get {
+				if (fieldListValueLabelStyle == null) {
+					fieldListValueLabelStyle = new GUIStyle(GUI.skin.label) { wordWrap = false };
+				}
+				return fieldListValueLabelStyle;
+			}
+		}
+		
+		public DisplayOption DisplayOptions { get; private set; }
 
 		#region Public API
 
@@ -74,10 +76,11 @@ namespace DebugObjectBrowser {
 		private ObjectBrowser() {
 			AddRootElement();
 			RegisterBuiltinHandlers();
+			DisplayOptions = DisplayOption.Fields;
 		}
 
 		private void RegisterBuiltinHandlers() {
-			RegisterHandler(typeof(object), new ObjectHandler());
+			RegisterHandler(typeof(object), new ObjectHandler(this));
 			foreach (var primitiveType in TypeUtil.Primitives) {
 				RegisterHandler(primitiveType, LeafTypeHandler);
 			}
@@ -98,6 +101,7 @@ namespace DebugObjectBrowser {
 
 		private void DrawUpdateIntervalSlider() {
 			GUILayout.BeginHorizontal();
+			
 			GUILayout.Label("Update interval: ");
 			GUILayout.BeginVertical();
 			GUILayout.Space(10f);
@@ -105,6 +109,14 @@ namespace DebugObjectBrowser {
 			GUILayout.EndVertical();
 			GUILayout.Label(childrenUpdateInterval.ToString());
 			GUILayout.FlexibleSpace();
+
+			var labels = DisplayOptionUtils.Names;
+			for (int i = 0; i < labels.Length; i++) {
+				bool enabled = DisplayOptions.IsSet(i);
+				enabled = GUILayout.Toggle(enabled, labels[i]);
+				DisplayOptions = DisplayOptions.With(i, enabled);
+			}
+			
 			GUILayout.EndHorizontal();
 		}
 
@@ -299,6 +311,5 @@ namespace DebugObjectBrowser {
 				ClearChildrenCache();
 			}
 		}
-
 	}
 }
