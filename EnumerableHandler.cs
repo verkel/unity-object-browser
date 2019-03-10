@@ -5,6 +5,10 @@ using System.Collections.Generic;
 namespace DebugObjectBrowser {
 	public class EnumerableHandler : ITypeHandler {
 		public string GetStringValue(object obj) {
+			var collection = obj as ICollection;
+			if (collection != null) {
+				return obj + ", Count=" + collection.Count;
+			}
 			return obj.ToString();
 		}
 
