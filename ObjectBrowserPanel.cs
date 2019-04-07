@@ -66,11 +66,16 @@ namespace DebugObjectBrowser {
 		}
 
 		public void DrawGui() {
-			MaybeClearChildrenCache();
+			if (!editor) MaybeClearChildrenCache();
 			DrawUpdateIntervalSlider(editor);
 			DrawBreadcrumb();
 			DrawFieldList();
 			DoAction();
+		}
+
+		// Run this in EditorWindow.Update(). Returns true if should call to EditorWindow.Repaint() afterwards.
+		public bool EditorWindowUpdate() {
+			return MaybeClearChildrenCache();
 		}
 		
 		private void AddRootElement() {
@@ -229,11 +234,13 @@ namespace DebugObjectBrowser {
 			ClearChildrenCache();
 		}
 
-		private void MaybeClearChildrenCache() {
+		private bool MaybeClearChildrenCache() {
 			if (Time.realtimeSinceStartup >= childrenCacheTime + childrenUpdateInterval) {
 				childrenCacheTime = Time.realtimeSinceStartup;
 				ClearChildrenCache();
+				return true;
 			}
+			return false;
 		}
 	}
 }
