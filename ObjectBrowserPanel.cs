@@ -9,16 +9,18 @@ namespace DebugObjectBrowser {
 		private static readonly GUILayoutOption[] BreadcrumbButtonLayout = { GUILayout.MinWidth(75), GUILayout.ExpandWidth(false) };
 		private static readonly GUILayoutOption[] UpdateIntervalSliderLayout = { GUILayout.MinWidth(200) };
 		
-		private ObjectBrowser model;
-		private bool editor;
+		private readonly ObjectBrowser model;
+		private readonly bool editor;
+		private readonly List<Element> path = new List<Element>();
+		private readonly List<Element> childrenCache = new List<Element>();
+		
 		private Action action;
 		private Vector2 scrollPos;
 		private int listItemCount = 1;
-		private List<Element> path = new List<Element>();
-		private List<Element> childrenCache = new List<Element>();
 		private bool childrenCached;
 		private float childrenCacheTime;
 		private float childrenUpdateInterval = 0.1f;
+		private DisplayOption displayOptions = DisplayOption.Fields;
 		
 		private GUIStyle fieldListValueLabelStyle;
 		private GUIStyle FieldListValueLabelStyle {
@@ -43,14 +45,12 @@ namespace DebugObjectBrowser {
 				if (fieldListHeaderLabelStyle == null) {
 					fieldListHeaderLabelStyle = new GUIStyle(FieldListValueLabelStyle);
 					fieldListHeaderLabelStyle.normal.textColor = (fieldListHeaderLabelStyle.normal.textColor 
-																+ Color.white) * 0.5f; // bias current color towards white, it gets multiplied by GUI.color
+						+ Color.white) * 0.5f; // bias current color towards white, it gets multiplied by GUI.color
 					fieldListHeaderLabelStyle.fontStyle = FontStyle.Bold;
 				}
 				return fieldListHeaderLabelStyle;
 			}
 		}
-
-		public DisplayOption DisplayOptions { get; private set; }
 		
 		public ObjectBrowserPanel(bool editor = false) : this(ObjectBrowser.instance, editor) {
 		}
@@ -58,7 +58,6 @@ namespace DebugObjectBrowser {
 		public ObjectBrowserPanel(ObjectBrowser model, bool editor) {
 			this.model = model;
 			this.editor = editor;
-			DisplayOptions = DisplayOption.Fields;
 			AddRootElement();
 		}
 		
@@ -93,9 +92,9 @@ namespace DebugObjectBrowser {
 
 			var labels = DisplayOptionUtils.Names;
 			for (int i = 0; i < labels.Length; i++) {
-				bool enabled = DisplayOptions.IsSet(i);
+				bool enabled = displayOptions.IsSet(i);
 				enabled = GUILayout.Toggle(enabled, labels[i]);
-				DisplayOptions = DisplayOptions.With(i, enabled);
+				displayOptions = displayOptions.With(i, enabled);
 			}
 			
 			GUILayout.EndHorizontal();
@@ -203,7 +202,7 @@ namespace DebugObjectBrowser {
 
 		private IList<Element> GetChildren(object parent, ITypeHandler parentHandler) {
 			if (!childrenCached) {
-				var enumerator = parentHandler.GetChildren(parent, DisplayOptions);
+				var enumerator = parentHandler.GetChildren(parent, displayOptions);
 				while (enumerator.MoveNext()) {
 					childrenCache.Add(enumerator.Current);
 				}
@@ -230,7 +229,7 @@ namespace DebugObjectBrowser {
 			ClearChildrenCache();
 		}
 
-		public void MaybeClearChildrenCache() {
+		private void MaybeClearChildrenCache() {
 			if (Time.realtimeSinceStartup >= childrenCacheTime + childrenUpdateInterval) {
 				childrenCacheTime = Time.realtimeSinceStartup;
 				ClearChildrenCache();
