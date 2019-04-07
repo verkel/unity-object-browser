@@ -6,7 +6,7 @@ namespace DebugObjectBrowser {
 	public interface ITypeHandler {
 		string GetStringValue(object obj);
 		string GetBreadcrumbText(object parent, Element elem);
-		IEnumerator<Element> GetChildren(object obj);
+		IEnumerator<Element> GetChildren(object obj, DisplayOption displayOptions);
 		bool IsLeaf(object obj);
 	}
 

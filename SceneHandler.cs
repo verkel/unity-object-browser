@@ -12,7 +12,7 @@ namespace DebugObjectBrowser {
 			return elem.text;
 		}
 
-		public IEnumerator<Element> GetChildren(object obj) {
+		public IEnumerator<Element> GetChildren(object obj, DisplayOption displayOptions) {
 			var scene = (Scene)obj;
 			return SceneObjectsEnumerator(scene);
 		}

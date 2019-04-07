@@ -12,7 +12,7 @@ namespace DebugObjectBrowser {
 			return obj.ToString();
 		}
 
-		public IEnumerator<Element> GetChildren(object obj) {
+		public IEnumerator<Element> GetChildren(object obj, DisplayOption displayOptions) {
 			IEnumerable enumerable = (IEnumerable) obj;
 			return EnumerableEnumerator(enumerable);
 		}

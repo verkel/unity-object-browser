@@ -10,7 +10,7 @@ namespace DebugObjectBrowser {
 			return obj.ToString();
 		}
 
-		public IEnumerator<Element> GetChildren(object obj) {
+		public IEnumerator<Element> GetChildren(object obj, DisplayOption displayOptions) {
 			componentResults.Clear();
 			GameObject go = (GameObject) obj;
 			go.GetComponents(componentResults);

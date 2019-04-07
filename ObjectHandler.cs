@@ -10,24 +10,17 @@ namespace DebugObjectBrowser {
 		private static readonly PropertyInfoComparer PropertyInfoComparer = new PropertyInfoComparer();
 		private static readonly FieldInfoEqualityComparer FieldInfoEqualityComparer = new FieldInfoEqualityComparer();
 
-		private readonly ObjectBrowser parent;
 		private readonly IDictionary<Type, FieldInfo[]> typeToFieldInfos = new Dictionary<Type, FieldInfo[]>();
 		private readonly IDictionary<Type, TypeProperties> typeToProperties = new Dictionary<Type, TypeProperties>();
 
-		private DisplayOption DisplayOptions => parent.DisplayOptions;
-		
-		public ObjectHandler(ObjectBrowser parent) {
-			this.parent = parent;
-		}
-		
 		public string GetStringValue(object obj) {
 			return obj.ToString();
 		}
 
-		public IEnumerator<Element> GetChildren(object obj) {
-			if (DisplayOptions.IsSet(DisplayOption.Fields))
+		public IEnumerator<Element> GetChildren(object obj, DisplayOption displayOptions) {
+			if (displayOptions.IsSet(DisplayOption.Fields))
 				foreach (var field in GetFields(obj)) yield return field;
-			if (DisplayOptions.IsSet(DisplayOption.Properties))
+			if (displayOptions.IsSet(DisplayOption.Properties))
 				foreach (var prop in GetProperties(obj)) yield return prop;
 		}
 
