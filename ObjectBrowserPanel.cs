@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace DebugObjectBrowser {
 	public class ObjectBrowserPanel {
-		private static readonly GUILayoutOption[] FieldListButtonLayout = { GUILayout.MinWidth(75) };
+		private static readonly GUILayoutOption[] FieldListButtonLayout = { GUILayout.MinWidth(125) };
 		private static readonly GUILayoutOption[] BreadcrumbButtonLayout = { GUILayout.MinWidth(75), GUILayout.ExpandWidth(false) };
 		private static readonly GUILayoutOption[] UpdateIntervalSliderLayout = { GUILayout.MinWidth(200) };
 		
@@ -21,6 +21,19 @@ namespace DebugObjectBrowser {
 		private float childrenCacheTime;
 		private float childrenUpdateInterval = 0.1f;
 		private DisplayOption displayOptions = DisplayOption.Fields;
+		
+		private GUIStyle fieldListButtonStyle;
+		private GUIStyle FieldListButtonStyle {
+			get {
+				if (fieldListButtonStyle == null) {
+					var buttonSkin = GUI.skin.button;
+					fieldListButtonStyle = new GUIStyle(GUI.skin.button) {
+						alignment = TextAnchor.MiddleLeft
+					};
+				}
+				return fieldListButtonStyle;
+			}
+		}
 		
 		private GUIStyle fieldListValueLabelStyle;
 		private GUIStyle FieldListValueLabelStyle {
@@ -173,7 +186,7 @@ namespace DebugObjectBrowser {
 			var buttonText = element.text;
 			if (element.type == Element.Type.ValueRow) {
 				GUI.enabled = !handler.IsLeaf(obj);
-				if (GUILayout.Button(buttonText, FieldListButtonLayout)) {
+				if (GUILayout.Button(buttonText, FieldListButtonStyle, FieldListButtonLayout)) {
 					action = () => SelectChild(element);
 				}
 				GUI.enabled = true;
