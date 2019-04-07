@@ -4,7 +4,8 @@ namespace DebugObjectBrowser {
 	[Flags]
 	public enum DisplayOption {
 		Fields = 1,
-		Properties = 2
+		BackingFields = 2,
+		Properties = 4
 	}
 
 	public static class DisplayOptionUtils {

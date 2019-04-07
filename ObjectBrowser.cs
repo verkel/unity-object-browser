@@ -25,6 +25,7 @@ namespace DebugObjectBrowser {
 		private readonly IDictionary<Type, ITypeHandler> typeToHandler = new Dictionary<Type, ITypeHandler>();
 
 		private readonly List<object> root = new List<object>();
+		private readonly ObjectHandler objectHandler = new ObjectHandler();
 		
 		#region Public API
 
@@ -62,12 +63,16 @@ namespace DebugObjectBrowser {
 			}
 		}
 
+		internal void ClearObjectHandlerFieldInfoCache() {
+			objectHandler.ClearFieldInfoCache();
+		}
+
 		private ObjectBrowser() {
 			RegisterBuiltinHandlers();
 		}
 
 		private void RegisterBuiltinHandlers() {
-			RegisterHandler(typeof(object), new ObjectHandler());
+			RegisterHandler(typeof(object), objectHandler);
 			foreach (var primitiveType in TypeUtil.Primitives) {
 				RegisterHandler(primitiveType, LeafTypeHandler);
 			}

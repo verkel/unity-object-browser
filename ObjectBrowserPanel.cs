@@ -109,13 +109,26 @@ namespace DebugObjectBrowser {
 			GUILayout.FlexibleSpace();
 
 			var labels = DisplayOptionUtils.Names;
+			var oldDisplayOptions = displayOptions;
 			for (int i = 0; i < labels.Length; i++) {
 				bool enabled = displayOptions.IsSet(i);
 				enabled = GUILayout.Toggle(enabled, labels[i]);
 				displayOptions = displayOptions.With(i, enabled);
 			}
-			
+
+			ClearFieldInfoCacheIfNecessary(oldDisplayOptions);
+
 			GUILayout.EndHorizontal();
+		}
+
+		private void ClearFieldInfoCacheIfNecessary(DisplayOption oldDisplayOptions) {
+			var fieldsChanged = oldDisplayOptions.IsSet(DisplayOption.Fields)
+								!= displayOptions.IsSet(DisplayOption.Fields);
+			var backingFieldsChanged = oldDisplayOptions.IsSet(DisplayOption.BackingFields)
+										!= displayOptions.IsSet(DisplayOption.BackingFields);
+			if (fieldsChanged || backingFieldsChanged) {
+				model.ClearObjectHandlerFieldInfoCache();
+			}
 		}
 
 		private void DrawFieldList() {

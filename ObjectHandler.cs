@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace DebugObjectBrowser {
 	public class ObjectHandler : ITypeHandler {
+		private const string BackingFieldSuffix = "k__BackingField";
 		private static readonly FieldInfoComparer FieldInfoComparer = new FieldInfoComparer();
 		private static readonly PropertyInfoComparer PropertyInfoComparer = new PropertyInfoComparer();
 		private static readonly FieldInfoEqualityComparer FieldInfoEqualityComparer = new FieldInfoEqualityComparer();
@@ -18,18 +19,24 @@ namespace DebugObjectBrowser {
 		}
 
 		public IEnumerator<Element> GetChildren(object obj, DisplayOption displayOptions) {
-			if (displayOptions.IsSet(DisplayOption.Fields))
-				foreach (var field in GetFields(obj)) yield return field;
+			if (displayOptions.IsSet(DisplayOption.Fields) || displayOptions.IsSet(DisplayOption.BackingFields)) {
+				foreach (var field in GetFields(obj, displayOptions)) yield return field;
+			}
+
 			if (displayOptions.IsSet(DisplayOption.Properties))
 				foreach (var prop in GetProperties(obj)) yield return prop;
 		}
 
-		private IEnumerable<Element> GetFields(object obj) {
+		public void ClearFieldInfoCache() {
+			typeToFieldInfos.Clear();
+		}
+
+		private IEnumerable<Element> GetFields(object obj, DisplayOption displayOptions) {
 			var type = obj.GetType();
 			FieldInfo[] fieldInfos;
 			if (!typeToFieldInfos.TryGetValue(type, out fieldInfos)) {
-				fieldInfos =
-					GetFieldsIncludingBaseClasses(type, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+				fieldInfos = GetFieldsIncludingBaseClasses(type, displayOptions,
+					BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 				Array.Sort(fieldInfos, FieldInfoComparer);
 				typeToFieldInfos[type] = fieldInfos;
 			}
@@ -46,7 +53,7 @@ namespace DebugObjectBrowser {
 		}
 
 		private static string RemovePropertyBackingFieldSuffix(string name) {
-			var index = name.LastIndexOf("k__BackingField", StringComparison.Ordinal);
+			var index = name.LastIndexOf(BackingFieldSuffix, StringComparison.Ordinal);
 			if (index != -1) name = name.Substring(0, index);
 			return name;
 		}
@@ -98,9 +105,11 @@ namespace DebugObjectBrowser {
 		}
 		
 		// https://stackoverflow.com/questions/9201859/why-doesnt-type-getfields-return-backing-fields-in-a-base-class
-		private static FieldInfo[] GetFieldsIncludingBaseClasses(Type type, BindingFlags bindingFlags)
+		private static FieldInfo[] GetFieldsIncludingBaseClasses(Type type, DisplayOption displayOptions, BindingFlags bindingFlags)
 		{
 			FieldInfo[] fieldInfos = type.GetFields(bindingFlags);
+			var fields = displayOptions.IsSet(DisplayOption.Fields);
+			var backingFields = displayOptions.IsSet(DisplayOption.BackingFields);
 
 			// If this class doesn't have a base, don't waste any time
 			if (type.BaseType == typeof(object))
@@ -117,6 +126,15 @@ namespace DebugObjectBrowser {
 					fieldInfoList.UnionWith(fieldInfos);
 					currentType = currentType.BaseType;
 				}
+
+				if (!backingFields) {
+					fieldInfoList.RemoveWhere(info => info.Name.EndsWith(BackingFieldSuffix));
+				}
+
+				if (!fields) {
+					fieldInfoList.RemoveWhere(info => !info.Name.EndsWith(BackingFieldSuffix));
+				}
+				
 				return fieldInfoList.ToArray();
 			}
 		}
