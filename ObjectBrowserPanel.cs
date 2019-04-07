@@ -10,6 +10,7 @@ namespace DebugObjectBrowser {
 		private static readonly GUILayoutOption[] UpdateIntervalSliderLayout = { GUILayout.MinWidth(200) };
 		
 		private ObjectBrowser model;
+		private bool editor;
 		private Action action;
 		private Vector2 scrollPos;
 		private int listItemCount = 1;
@@ -51,11 +52,12 @@ namespace DebugObjectBrowser {
 
 		public DisplayOption DisplayOptions { get; private set; }
 		
-		public ObjectBrowserPanel() : this(ObjectBrowser.instance) {
+		public ObjectBrowserPanel(bool editor = false) : this(ObjectBrowser.instance, editor) {
 		}
 		
-		public ObjectBrowserPanel(ObjectBrowser model) {
+		public ObjectBrowserPanel(ObjectBrowser model, bool editor) {
 			this.model = model;
+			this.editor = editor;
 			DisplayOptions = DisplayOption.Fields;
 			AddRootElement();
 		}
@@ -66,7 +68,7 @@ namespace DebugObjectBrowser {
 
 		public void DrawGui() {
 			MaybeClearChildrenCache();
-			DrawUpdateIntervalSlider();
+			DrawUpdateIntervalSlider(editor);
 			DrawBreadcrumb();
 			DrawFieldList();
 			DoAction();
@@ -78,12 +80,12 @@ namespace DebugObjectBrowser {
 			path.Add(rootElem);
 		}
 
-		private void DrawUpdateIntervalSlider() {
+		private void DrawUpdateIntervalSlider(bool editor) {
 			GUILayout.BeginHorizontal();
 			
 			GUILayout.Label("Update interval: ");
 			GUILayout.BeginVertical();
-			GUILayout.Space(10f);
+			if (!editor) GUILayout.Space(10f);
 			childrenUpdateInterval = GUILayout.HorizontalSlider(childrenUpdateInterval, 0.01f, 1f, UpdateIntervalSliderLayout);
 			GUILayout.EndVertical();
 			GUILayout.Label(childrenUpdateInterval.ToString());
