@@ -31,7 +31,6 @@ namespace DebugObjectBrowser {
 		private float childrenCacheTime = 0f;
 		private float childrenUpdateInterval = 0.1f;
 		private Vector2 scrollPos = new Vector2();
-		private float listItemHeight = 20;
 		private static int listItemCount = 1;
 		private IDictionary<Type, ITypeHandler> registeredHandlers = new Dictionary<Type, ITypeHandler>();
 		private IDictionary<Type, ITypeHandler> typeToHandler = new Dictionary<Type, ITypeHandler>();
@@ -41,10 +40,34 @@ namespace DebugObjectBrowser {
 		private GUIStyle FieldListValueLabelStyle {
 			get {
 				if (fieldListValueLabelStyle == null) {
-					fieldListValueLabelStyle = new GUIStyle(GUI.skin.label) { wordWrap = false };
+					var buttonSkin = GUI.skin.button;
+					fieldListValueLabelStyle = new GUIStyle(GUI.skin.label) { 
+						wordWrap = false, 
+					};
+					fieldListValueLabelStyle.margin.top = buttonSkin.margin.top;
+					fieldListValueLabelStyle.margin.bottom = buttonSkin.margin.bottom;
+					fieldListValueLabelStyle.padding.top = buttonSkin.padding.top;
+					fieldListValueLabelStyle.padding.bottom = buttonSkin.padding.bottom;
 				}
 				return fieldListValueLabelStyle;
 			}
+		}
+
+		private GUIStyle fieldListHeaderLabelStyle;
+		private GUIStyle FieldListHeaderLabelStyle {
+			get {
+				if (fieldListHeaderLabelStyle == null) {
+					fieldListHeaderLabelStyle = new GUIStyle(FieldListValueLabelStyle);
+					fieldListHeaderLabelStyle.normal.textColor = (fieldListHeaderLabelStyle.normal.textColor 
+						+ Color.white) * 0.5f; // bias current color towards white, it gets multiplied by GUI.color
+					fieldListHeaderLabelStyle.fontStyle = FontStyle.Bold;
+				}
+				return fieldListHeaderLabelStyle;
+			}
+		}
+		
+		private float listItemHeight {
+			get { return GUI.skin.button.lineHeight; }
 		}
 		
 		public DisplayOption DisplayOptions { get; private set; }
@@ -151,7 +174,6 @@ namespace DebugObjectBrowser {
 		private void DoDrawFieldList(object parent, Vector2 scrollPos) {
 			var parentHandler = GetHandler(parent);
 			var children = GetChildren(parent, parentHandler);
-			listItemHeight = GUI.skin.button.CalcHeight(new GUIContent("Test button content"), float.MaxValue);
 			int firstIndex = (int)(scrollPos.y / listItemHeight);
 			firstIndex = Mathf.Clamp(firstIndex, 0, Mathf.Max(0, children.Count - listItemCount));
 			DrawFieldListColumn(children, firstIndex, DrawFieldListButton);
@@ -187,19 +209,19 @@ namespace DebugObjectBrowser {
 
 		private void DrawFieldListButton(Element element, object obj, ITypeHandler handler) {
 			var buttonText = element.text;
-			GUI.enabled = !handler.IsLeaf(obj);
 			if (element.type == Element.Type.ValueRow) {
+				GUI.enabled = !handler.IsLeaf(obj);
 				if (GUILayout.Button(buttonText, FieldListButtonLayout)) {
 					action = () => SelectChild(element);
 				}
+				GUI.enabled = true;
 			}
 			else if (element.type == Element.Type.Header) {
 				var color = GUI.color;
 				GUI.color = element.textColor;
-				GUILayout.Label(element.text);
+				GUILayout.Label(element.text, FieldListHeaderLabelStyle);
 				GUI.color = color;
 			}
-			GUI.enabled = true;
 		}
 
 		private void GoToAncestor(object parent) {
