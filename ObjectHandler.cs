@@ -40,10 +40,17 @@ namespace DebugObjectBrowser {
 			yield return Element.CreateHeader("Fields", Color.cyan);
 			for (int i = 0; i < fieldInfos.Length; i++) {
 				var fieldInfo = fieldInfos[i];
-				yield return Element.Create(fieldInfo.GetValue(obj), fieldInfo.Name);
+				var name = RemovePropertyBackingFieldSuffix(fieldInfo.Name);
+				yield return Element.Create(fieldInfo.GetValue(obj), name);
 			}
 		}
-		
+
+		private static string RemovePropertyBackingFieldSuffix(string name) {
+			var index = name.LastIndexOf("k__BackingField", StringComparison.Ordinal);
+			if (index != -1) name = name.Substring(0, index);
+			return name;
+		}
+
 		private IEnumerable<Element> GetProperties(object obj) {
 			var type = obj.GetType();
 			TypeProperties typeProperties;
