@@ -87,6 +87,7 @@ namespace DebugObjectBrowser {
 						value = propertyInfo.GetValue(obj);
 					}
 					catch (Exception e) {
+						e = e.InnerException ?? e;
 						typeProperties.AddSkipped(propertyName, e);
 						value = typeProperties.GetSkipReason(propertyName);
 					}
