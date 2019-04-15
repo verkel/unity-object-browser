@@ -9,7 +9,7 @@ namespace DebugObjectBrowser {
 		private readonly Type baseType;
 		private readonly string instancePropertyName;
 
-		private List<PropertyInfo> instanceProperties;
+		private List<KeyValuePair<string, PropertyInfo>> instanceProperties;
 
 		public SingletonList(Type baseType, string instancePropertyName = "Instance") {
 			this.instancePropertyName = instancePropertyName;
@@ -21,24 +21,38 @@ namespace DebugObjectBrowser {
 		}
 
 		private IEnumerator<object> SingletonsEnumerator() {
-			foreach (var property in GetInstanceProperties()) {
-				object value;
-				try {
-					value = property.GetValue(null);
+			var pairs = GetInstanceProperties();
+			for (var i = 0; i < pairs.Count; i++) {
+				object propValue = null;
+
+				// Try getting the singleton value while we haven't got an exception
+				if (pairs[i].Value != null) {
+					try {
+						propValue = pairs[i].Value.GetValue(null);
+					}
+					catch (Exception e) {
+						e = e.InnerException ?? e;
+						pairs[i] = new KeyValuePair<string, PropertyInfo>(pairs[i].Key + ": " + e.GetType().Name, null);
+					}
 				}
-				catch (Exception e) {
-					value = e.GetType().Name;
+
+				// Exception received, ignore this singleton from now on and display the exception name
+				if (pairs[i].Value == null) {
+					propValue = pairs[i].Key;
 				}
-				yield return value;
+
+				yield return propValue;
 			}
 		}
 
-		private IEnumerable<PropertyInfo> GetInstanceProperties() {
+		private List<KeyValuePair<string, PropertyInfo>> GetInstanceProperties() {
 			if (instanceProperties == null) {
-				instanceProperties = baseType.Assembly.GetTypes()
-					.Select(type => type.BaseType)
-					.Where(bt => bt != null && bt.IsGenericType && bt.GetGenericTypeDefinition() == baseType)
-					.Select(bt => bt.GetProperty(instancePropertyName))
+				instanceProperties =
+					(from type in baseType.Assembly.GetTypes()
+					let bt = type.BaseType
+					where bt != null && bt.IsGenericType && bt.GetGenericTypeDefinition() == baseType
+					orderby type.FullName
+					select new KeyValuePair<string, PropertyInfo>(type.Name, bt.GetProperty(instancePropertyName)))
 					.ToList();
 			}
 			return instanceProperties;
