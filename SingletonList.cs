@@ -5,13 +5,13 @@ using System.Linq;
 using System.Reflection;
 
 namespace DebugObjectBrowser {
-	public class SingletonsList : IShowAsList {
+	public class SingletonList : IShowAsList {
 		private readonly Type baseType;
 		private readonly string instancePropertyName;
 
 		private List<PropertyInfo> instanceProperties;
 
-		public SingletonsList(Type baseType, string instancePropertyName = "Instance") {
+		public SingletonList(Type baseType, string instancePropertyName = "Instance") {
 			this.instancePropertyName = instancePropertyName;
 			this.baseType = baseType;
 		}
