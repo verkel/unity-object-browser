@@ -28,7 +28,7 @@ namespace DebugObjectBrowser {
 				// Try getting the singleton value while we haven't got an exception
 				if (pairs[i].Value != null) {
 					try {
-						propValue = pairs[i].Value.GetValue(null);
+						propValue = pairs[i].Value.GetValue(null, null);
 					}
 					catch (Exception e) {
 						e = e.InnerException ?? e;

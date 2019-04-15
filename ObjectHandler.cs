@@ -84,7 +84,7 @@ namespace DebugObjectBrowser {
 				}
 				else {
 					try {
-						value = propertyInfo.GetValue(obj);
+						value = propertyInfo.GetValue(obj, null);
 					}
 					catch (Exception e) {
 						e = e.InnerException ?? e;
