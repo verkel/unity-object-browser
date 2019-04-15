@@ -187,12 +187,19 @@ namespace DebugObjectBrowser {
 		private void DrawFieldListValueLabel(Element element, object obj, ITypeHandler handler) {
 			string valueText;
 			if (element.type == Element.Type.ValueRow) {
-				valueText = obj == null ? "null" : handler.GetStringValue(obj);
+				valueText = obj == null ? "null" : EscapeNewlines(handler.GetStringValue(obj));
 			}
 			else {
 				valueText = "";
 			}
 			GUILayout.Label(valueText, FieldListValueLabelStyle);
+		}
+
+		private static string EscapeNewlines(string str) {
+			if (str.Contains('\n')) {
+				return str.Replace('\n', '|');
+			}
+			return str;
 		}
 
 		private void DrawFieldListButton(Element element, object obj, ITypeHandler handler) {
