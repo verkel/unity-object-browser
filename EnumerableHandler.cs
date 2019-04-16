@@ -21,7 +21,8 @@ namespace DebugObjectBrowser {
 			var inner = enumerable.GetEnumerator();
 			int index = 0;
 			while (inner.MoveNext()) {
-				yield return Element.Create(inner.Current, index.ToString());
+				if (inner.Current is Element) yield return (Element)inner.Current;
+				else yield return Element.Create(inner.Current, index.ToString());
 				index++;
 			}
 		}
