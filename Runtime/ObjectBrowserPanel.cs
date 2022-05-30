@@ -8,12 +8,12 @@ namespace DebugObjectBrowser {
 		private static readonly GUILayoutOption[] FieldListButtonLayout = { GUILayout.MinWidth(125) };
 		private static readonly GUILayoutOption[] BreadcrumbButtonLayout = { GUILayout.MinWidth(75), GUILayout.ExpandWidth(false) };
 		private static readonly GUILayoutOption[] UpdateIntervalSliderLayout = { GUILayout.MinWidth(200) };
-		
+
 		private readonly ObjectBrowser model;
 		private readonly bool editor;
 		private readonly List<Element> path = new List<Element>();
 		private readonly List<Element> childrenCache = new List<Element>();
-		
+
 		private Action action;
 		private Vector2 scrollPos;
 		private int listItemCount = 1;
@@ -21,7 +21,7 @@ namespace DebugObjectBrowser {
 		private float childrenCacheTime;
 		private float childrenUpdateInterval = 0.1f;
 		private DisplayOption displayOptions = DisplayOption.Fields;
-		
+
 		private GUIStyle fieldListButtonStyle;
 		private GUIStyle FieldListButtonStyle {
 			get {
@@ -34,14 +34,14 @@ namespace DebugObjectBrowser {
 				return fieldListButtonStyle;
 			}
 		}
-		
+
 		private GUIStyle fieldListValueLabelStyle;
 		private GUIStyle FieldListValueLabelStyle {
 			get {
 				if (fieldListValueLabelStyle == null) {
 					var buttonSkin = GUI.skin.button;
-					fieldListValueLabelStyle = new GUIStyle(GUI.skin.label) { 
-						wordWrap = false, 
+					fieldListValueLabelStyle = new GUIStyle(GUI.skin.label) {
+						wordWrap = false,
 					};
 					fieldListValueLabelStyle.margin.top = buttonSkin.margin.top;
 					fieldListValueLabelStyle.margin.bottom = buttonSkin.margin.bottom;
@@ -57,23 +57,23 @@ namespace DebugObjectBrowser {
 			get {
 				if (fieldListHeaderLabelStyle == null) {
 					fieldListHeaderLabelStyle = new GUIStyle(FieldListValueLabelStyle);
-					fieldListHeaderLabelStyle.normal.textColor = (fieldListHeaderLabelStyle.normal.textColor 
+					fieldListHeaderLabelStyle.normal.textColor = (fieldListHeaderLabelStyle.normal.textColor
 						+ Color.white) * 0.5f; // bias current color towards white, it gets multiplied by GUI.color
 					fieldListHeaderLabelStyle.fontStyle = FontStyle.Bold;
 				}
 				return fieldListHeaderLabelStyle;
 			}
 		}
-		
+
 		public ObjectBrowserPanel(bool editor = false) : this(ObjectBrowser.instance, editor) {
 		}
-		
+
 		public ObjectBrowserPanel(ObjectBrowser model, bool editor) {
 			this.model = model;
 			this.editor = editor;
 			AddRootElement();
 		}
-		
+
 		private float listItemHeight {
 			get { return GUI.skin.button.lineHeight; }
 		}
@@ -90,7 +90,7 @@ namespace DebugObjectBrowser {
 		public bool EditorWindowUpdate() {
 			return MaybeClearChildrenCache();
 		}
-		
+
 		private void AddRootElement() {
 			var rootElem = Element.Create(model.GetRoot(), "Objects");
 			rootElem.breadcrumbText = "Objects";
@@ -99,7 +99,7 @@ namespace DebugObjectBrowser {
 
 		private void DrawUpdateIntervalSlider(bool editor) {
 			GUILayout.BeginHorizontal();
-			
+
 			GUILayout.Label("Update interval: ");
 			GUILayout.BeginVertical();
 			if (!editor) GUILayout.Space(10f);
@@ -143,7 +143,7 @@ namespace DebugObjectBrowser {
 		}
 
 		private void DrawFieldList(object parent) {
-			scrollPos = GUILayout.BeginScrollView(scrollPos, GUI.skin.box, GUILayout.Width(Screen.width));
+			scrollPos = GUILayout.BeginScrollView(scrollPos, GUI.skin.box);
 			GUILayout.BeginHorizontal();
 			DoDrawFieldList(parent, scrollPos);
 			GUILayout.FlexibleSpace();
@@ -170,7 +170,7 @@ namespace DebugObjectBrowser {
 
 		private delegate void DrawFieldListCellDelegate(Element element, object obj, ITypeHandler handler);
 
-		private void DrawFieldListColumn(IList<Element> children, int firstIndex, 
+		private void DrawFieldListColumn(IList<Element> children, int firstIndex,
 				DrawFieldListCellDelegate drawCell) {
 			GUILayout.BeginVertical();
 			GUILayout.Space(firstIndex * listItemHeight);
