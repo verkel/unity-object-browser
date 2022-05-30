@@ -50,7 +50,7 @@ namespace DebugObjectBrowser {
 				instanceProperties =
 					(from type in baseType.Assembly.GetTypes()
 					let bt = type.BaseType
-					where bt != null && bt.IsGenericType && bt.GetGenericTypeDefinition() == baseType
+					where bt != null && !type.IsAbstract && bt.IsGenericType && bt.GetGenericTypeDefinition() == baseType
 					orderby type.FullName
 					select new Data(type.Name, bt.GetProperty(instancePropertyName)))
 					.ToArray();
