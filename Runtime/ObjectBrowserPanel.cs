@@ -126,7 +126,9 @@ namespace DebugObjectBrowser {
 								!= displayOptions.IsSet(DisplayOption.Fields);
 			var backingFieldsChanged = oldDisplayOptions.IsSet(DisplayOption.BackingFields)
 										!= displayOptions.IsSet(DisplayOption.BackingFields);
-			if (fieldsChanged || backingFieldsChanged) {
+			var inheritedChanged = oldDisplayOptions.IsSet(DisplayOption.Inherited)
+										!= displayOptions.IsSet(DisplayOption.Inherited);
+			if (fieldsChanged || backingFieldsChanged || inheritedChanged) {
 				model.ClearObjectHandlerFieldInfoCache();
 			}
 		}

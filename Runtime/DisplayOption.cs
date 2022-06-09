@@ -5,12 +5,13 @@ namespace DebugObjectBrowser {
 	public enum DisplayOption {
 		Fields = 1,
 		BackingFields = 2,
-		Properties = 4
+		Properties = 4,
+		Inherited = 8
 	}
 
 	public static class DisplayOptionUtils {
 		public static readonly string[] Names = Enum.GetNames(typeof(DisplayOption));
-		
+
 		public static bool IsSet(this DisplayOption flags, DisplayOption value) {
 			return (flags & value) != 0;
 		}

@@ -24,7 +24,7 @@ namespace DebugObjectBrowser {
 			}
 
 			if (displayOptions.IsSet(DisplayOption.Properties))
-				foreach (var prop in GetProperties(obj)) yield return prop;
+				foreach (var prop in GetProperties(obj, displayOptions)) yield return prop;
 		}
 
 		public void ClearFieldInfoCache() {
@@ -35,8 +35,7 @@ namespace DebugObjectBrowser {
 			var type = obj.GetType();
 			FieldInfo[] fieldInfos;
 			if (!typeToFieldInfos.TryGetValue(type, out fieldInfos)) {
-				fieldInfos = GetFieldsIncludingBaseClasses(type, displayOptions,
-					BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+				fieldInfos = GetFieldsIncludingBaseClasses(type, displayOptions, GetBindingFlags(displayOptions));
 				Array.Sort(fieldInfos, FieldInfoComparer);
 				typeToFieldInfos[type] = fieldInfos;
 			}
@@ -58,16 +57,24 @@ namespace DebugObjectBrowser {
 			return name;
 		}
 
-		private IEnumerable<Element> GetProperties(object obj) {
+		private IEnumerable<Element> GetProperties(object obj, DisplayOption displayOptions) {
 			var type = obj.GetType();
 			TypeProperties typeProperties;
 			if (!typeToProperties.TryGetValue(type, out typeProperties)) {
-				var propertyInfos = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+				var propertyInfos = type.GetProperties(GetBindingFlags(displayOptions));
 				Array.Sort(propertyInfos, PropertyInfoComparer);
 				typeProperties = new TypeProperties(propertyInfos);
 				typeToProperties[type] = typeProperties;
 			}
 			return PropertiesEnumerator(typeProperties, obj);
+		}
+
+		private BindingFlags GetBindingFlags(DisplayOption displayOptions)
+		{
+			var bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+			if (!displayOptions.IsSet(DisplayOption.Inherited))
+				bindingFlags |= BindingFlags.DeclaredOnly;
+			return bindingFlags;
 		}
 
 		private IEnumerable<Element> PropertiesEnumerator(TypeProperties typeProperties, object obj) {
@@ -77,7 +84,7 @@ namespace DebugObjectBrowser {
 				var propertyInfo = propertyInfos[i];
 				object value;
 				var propertyName = propertyInfo.Name;
-				
+
 				// Try invoking the property getter, if an exception occurs, do not call it again
 				if (typeProperties.IsSkipped(propertyName)) {
 					value = typeProperties.GetSkipReason(propertyName);
@@ -92,7 +99,7 @@ namespace DebugObjectBrowser {
 						value = typeProperties.GetSkipReason(propertyName);
 					}
 				}
-				
+
 				yield return Element.Create(value, propertyInfo.Name);
 			}
 		}
@@ -104,7 +111,7 @@ namespace DebugObjectBrowser {
 		public string GetBreadcrumbText(object parent, Element elem) {
 			return parent.GetType().Name + "." + elem.text;
 		}
-		
+
 		// https://stackoverflow.com/questions/9201859/why-doesnt-type-getfields-return-backing-fields-in-a-base-class
 		private static FieldInfo[] GetFieldsIncludingBaseClasses(Type type, DisplayOption displayOptions, BindingFlags bindingFlags)
 		{
@@ -112,32 +119,28 @@ namespace DebugObjectBrowser {
 			var fields = displayOptions.IsSet(DisplayOption.Fields);
 			var backingFields = displayOptions.IsSet(DisplayOption.BackingFields);
 
-			// If this class doesn't have a base, don't waste any time
-			if (type.BaseType == typeof(object))
-			{
-				return fieldInfos;
-			}
-			else
-			{   // Otherwise, collect all types up to the furthest base class
+			var fieldInfoList = new HashSet<FieldInfo>(fieldInfos, FieldInfoEqualityComparer);
+
+			if (displayOptions.IsSet(DisplayOption.Inherited) && type.BaseType != typeof(object)) {
+				// collect all types up to the furthest base class
 				var currentType = type;
-				var fieldInfoList = new HashSet<FieldInfo>(fieldInfos, FieldInfoEqualityComparer);
 				while (currentType != typeof(object))
 				{
 					fieldInfos = currentType.GetFields(bindingFlags);
 					fieldInfoList.UnionWith(fieldInfos);
 					currentType = currentType.BaseType;
 				}
-
-				if (!backingFields) {
-					fieldInfoList.RemoveWhere(info => info.Name.EndsWith(BackingFieldSuffix));
-				}
-
-				if (!fields) {
-					fieldInfoList.RemoveWhere(info => !info.Name.EndsWith(BackingFieldSuffix));
-				}
-				
-				return fieldInfoList.ToArray();
 			}
+
+			if (!backingFields) {
+				fieldInfoList.RemoveWhere(info => info.Name.EndsWith(BackingFieldSuffix));
+			}
+
+			if (!fields) {
+				fieldInfoList.RemoveWhere(info => !info.Name.EndsWith(BackingFieldSuffix));
+			}
+
+			return fieldInfoList.ToArray();
 		}
 	}
 
@@ -153,7 +156,7 @@ namespace DebugObjectBrowser {
 			return info.FieldType.IsValueType ? 1 : 0;
 		}
 	}
-	
+
 	class FieldInfoEqualityComparer : IEqualityComparer<FieldInfo>
 	{
 		public bool Equals(FieldInfo x, FieldInfo y)
@@ -166,7 +169,7 @@ namespace DebugObjectBrowser {
 			return obj.Name.GetHashCode() ^ obj.DeclaringType.GetHashCode();
 		}
 	}
-	
+
 	class PropertyInfoComparer : IComparer<PropertyInfo> {
 		public int Compare(PropertyInfo x, PropertyInfo y) {
 			int typeCmp = GetTypeOrdinal(x).CompareTo(GetTypeOrdinal(y));
